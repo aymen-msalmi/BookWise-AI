@@ -13,7 +13,7 @@ An AI-powered application that allows users to upload PDF books, extract their c
 ---
 
 ## Demo
-![Demo Screenshot](demo-screenshot.png)  
+![Demo Screenshot](img/emo-screenshot.png)  
 *Upload a book, ask questions, and get answers!*
 
 ---
@@ -22,5 +22,9 @@ An AI-powered application that allows users to upload PDF books, extract their c
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/BookWise-AI.git
+   git clone https://github.com/aymen-msalmi/BookWise-AI.git
    cd BookWise-AI
+2. **Install the dependencies** 
+```bash
+pip install -r requirements.txt
+```

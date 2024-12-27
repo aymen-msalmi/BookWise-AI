@@ -29,9 +29,11 @@ def extract_text_with_pymupdf(pdf_path):
         page_text_dict = {}
         for i, page in enumerate(doc):
             page_text_dict[f"Page {i+1}"] = page.get_text() or "No text found on this page."
+            print(f"Extracted text for Page {i+1}")  # Debugging
         return page_text_dict
     except Exception as e:
         return f"An error occurred while extracting text: {e}"
+
 
 
 def correct_splits_and_typos(text):
@@ -97,7 +99,6 @@ def chunk_text_by_phrase(clean_text_dict, chunk_size=300):
     chunks = []
     for page_num, text in clean_text_dict.items():
         # Split into phrases by punctuation
-        # Keep punctuation as part of the phrase
         phrases = re.split(r'([.!?])', text)
 
         chunk = ""
@@ -107,10 +108,13 @@ def chunk_text_by_phrase(clean_text_dict, chunk_size=300):
             else:
                 if chunk.strip():
                     chunks.append({"page": page_num, "text": chunk.strip()})
+                    print(f"Chunk created for Page {page_num}: {chunk.strip()[:50]}...")  # Debugging
                 chunk = phrase
         if chunk.strip():
             chunks.append({"page": page_num, "text": chunk.strip()})
+            print(f"Final chunk for Page {page_num}: {chunk.strip()[:50]}...")  # Debugging
     return chunks
+
 
 
 def add_chunks_to_chromadb(chunks):
@@ -127,6 +131,23 @@ def add_chunks_to_chromadb(chunks):
         ) for chunk in chunks
     ]
     vectorstore.add_documents(documents)
+    print(f"Added {len(chunks)} chunks to ChromaDB.")  # Debugging
+
+
+
+import shutil  # To delete the directory
+
+import shutil  # For deleting directories
+
+def reset_chromadb():
+    """
+    Clears the ChromaDB store by deleting the persist directory.
+    """
+    global vectorstore
+    # Delete the persist directory
+    shutil.rmtree(persist_directory, ignore_errors=True)
+    # Reinitialize vectorstore with an empty database
+    vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embedding_model)
 
 
 def upload_book(file):
@@ -136,6 +157,9 @@ def upload_book(file):
     global page_text_dict, cleaned_text_dict, chunks
     if file is None:
         return "No file uploaded!"
+
+    # Reset the ChromaDB to clear any old data
+    reset_chromadb()
 
     # Save file path and process the PDF
     pdf_path = file.name
@@ -152,6 +176,8 @@ def upload_book(file):
     return f"Book '{file.name}' uploaded and processed successfully!"
 
 
+
+
 def query_chromadb(query, top_k=3):
     """
     Queries ChromaDB for the most relevant chunks based on a query.
@@ -164,6 +190,8 @@ def query_chromadb(query, top_k=3):
     - list of dict: Relevant chunks with metadata.
     """
     results = vectorstore.similarity_search_with_score(query, k=top_k)
+    for result in results:
+        print(f"Retrieved chunk from Page {result[0].metadata['page']} with score {result[1]}")  # Debugging
     return [{"text": result[0].page_content, "page": result[0].metadata["page"], "score": result[1]} for result in results]
 
 
